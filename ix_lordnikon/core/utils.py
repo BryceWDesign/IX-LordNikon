@@ -1,36 +1,49 @@
 """
-IX-LordNikon Utilities Module
+IX-LordNikon Utility Tools
 
-Helper functions for cleaning and validating cybersecurity and cryptography queries.
+Helper functions for forensic memory comparison, timestamp parsing,
+and cognitive anomaly detection support.
 """
 
-import re
+from datetime import datetime
 
-def clean_query(query: str) -> str:
+def parse_iso_timestamp(timestamp_str: str) -> datetime:
     """
-    Normalize the input query by trimming whitespace and removing
-    non-alphanumeric characters except essential symbols.
+    Parse ISO8601 timestamp string into a datetime object.
     """
-    query = query.strip()
-    query = re.sub(r'\s+', ' ', query)
-    query = re.sub(r'[^\w\s\-\+\=\(\)\[\]]+', '', query)
-    return query
+    try:
+        return datetime.fromisoformat(timestamp_str)
+    except ValueError:
+        raise ValueError(f"Invalid ISO timestamp: {timestamp_str}")
 
-def is_valid_query(query: str) -> bool:
+def compare_memory_entries(entry1: dict, entry2: dict) -> bool:
     """
-    Basic validation to ensure query contains meaningful characters.
+    Compare two memory map entries for content similarity.
+    Returns True if they are equivalent.
     """
-    return bool(query and len(query) > 3 and any(c.isalpha() for c in query))
+    keys_to_compare = ["origin", "content"]
+    for key in keys_to_compare:
+        if entry1.get(key) != entry2.get(key):
+            return False
+    return True
+
+def detect_anomaly(sequence: list) -> bool:
+    """
+    Given a sequence of memory entries, detect anomalies such as
+    repeated identical content or missing expected entries.
+    Returns True if anomaly detected.
+    """
+    seen_contents = set()
+    for entry in sequence:
+        content = entry.get("content")
+        if content in seen_contents:
+            return True
+        seen_contents.add(content)
+    return False
 
 # Example usage
 if __name__ == "__main__":
-    tests = [
-        "   What is encryption?   ",
-        "!!!",
-        "Secure",
-        "Explain digital signature!"
-    ]
-    for q in tests:
-        cleaned = clean_query(q)
-        valid = is_valid_query(cleaned)
-        print(f"'{q}' → Cleaned: '{cleaned}' | Valid: {valid}")
+    entry_a = {"origin": "IX-Hal", "content": "Override command"}
+    entry_b = {"origin": "IX-Hal", "content": "Override command"}
+    print("Compare entries:", compare_memory_entries(entry_a, entry_b))
+    print("Detect anomaly in duplicates:", detect_anomaly([entry_a, entry_b]))
